@@ -24,8 +24,9 @@ public class homework {
 		boolean[] visited=new boolean[nodeslist.size()];
 		Queue q=new LinkedList<>();
 		q.add(s);
-		myparent[0]=-1;
-		visited[0]=true;
+		int rootindex=nodeslist.indexOf(s);
+		myparent[rootindex]=-1;
+		visited[rootindex]=true;
 		Object goal=(Object)g;
 		Object start=(Object)s;
 		int count=0,flag=0,p,p1;
@@ -91,14 +92,16 @@ public class homework {
 		Stack ds=new Stack();
 		Stack temp=new Stack();
 		ds.push(s);
-		myparent[0]=-1;
-		visited[0]=true;
+		int rootindex=nodeslist.indexOf(s);
+		myparent[rootindex]=-1;
+		visited[rootindex]=true;
 		Object goal=(Object)g;
 		Object start=(Object)s;
 		int flag=0;
 		while(!ds.isEmpty()||flag==0){
 			Object top=ds.pop();
 			int topindex=nodeslist.indexOf(top);
+			visited[topindex]=true;
 			if(top.equals(goal)){
 				//System.out.println("Found");
 				flag=1;
@@ -111,7 +114,7 @@ public class homework {
 						//System.out.println(child);
 						if(visited[k]==false){
 							temp.push(child);
-							visited[k]=true;
+							
 							myparent[k]=topindex;	
 							
 						}
@@ -163,7 +166,7 @@ public class homework {
 			FileReader fr=new FileReader("input.txt");
 			BufferedReader br=new BufferedReader(fr);
 			String type=Files.readAllLines(Paths.get("input.txt")).get(0); //Reads the type of algo
-			System.out.println(type);
+			//System.out.println(type);
 			String start=Files.readAllLines(Paths.get("input.txt")).get(1); //Reads the start node
 			//System.out.println(start);
 			String goal=Files.readAllLines(Paths.get("input.txt")).get(2); //Reads the goal node
@@ -176,7 +179,7 @@ public class homework {
 			
 			for(int i=4;i<=4+livetlno-1;i++){
 				String livetrafficlines=Files.readAllLines(Paths.get("input.txt")).get(i);
-				System.out.println(livetrafficlines);	//Reads live traffic line by line
+				//System.out.println(livetrafficlines);	//Reads live traffic line by line
 				String[] liveTrafficArray=livetrafficlines.split(" ");
 				node1= liveTrafficArray[0];
 				node2= liveTrafficArray[1];
@@ -214,7 +217,7 @@ public class homework {
 					int beginNo=nodeslist.indexOf(node1); //index of 1st node
 					int endNo=nodeslist.indexOf(node2); //index of second node
 					aMatrix[beginNo][endNo]=1;
-					aMatrix[endNo][beginNo]=1;
+					//aMatrix[endNo][beginNo]=1;
 					
 				}
 				
@@ -225,11 +228,14 @@ public class homework {
 				System.out.println();
 			}*/
 			
-			System.out.println(nodeslist);
+			//System.out.println(nodeslist);
 			
-			
-			//BFS(start,goal);
+			if(type.equals("BFS")){
+				BFS(start,goal);
+			}
+			if(type.equals("DFS")){
 			DFS(start,goal);
+			}
 			
 			
 			
