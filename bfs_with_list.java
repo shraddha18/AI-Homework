@@ -1,81 +1,104 @@
-package homework1;
+package homeworkalt;
 
+import java.awt.List;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
-public class homework {
-	
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
+import java.util.Stack;
+
+public class homeworkalt {
 	static int[][] aMatrix;
 	static int size,livetlno;
 	static String line,node1,node2,weight;
-	static ArrayList nodeslist=new ArrayList<>();
+	static ArrayList nodeslist=new ArrayList<MyNode>();
 	static int[] myparent={};
+	static LinkedHashMap<String,ArrayList<MyNode>> adjhash;
+	static HashMap<String,String> parentnode;
 	
 	public static void BFS(String s,String g){
+		parentnode =new HashMap<String,String>();
 		myparent=new int[nodeslist.size()];
 		boolean[] visited=new boolean[nodeslist.size()];
 		Queue q=new LinkedList<>();
-		q.add(s);
-		int rootindex=nodeslist.indexOf(s);
-		myparent[rootindex]=-1;
-		visited[rootindex]=true;
-		Object goal=(Object)g;
-		Object start=(Object)s;
-		int count=0,flag=0,p,p1;
+		MyNode start=new MyNode(s,0);
+		start.visited=true;
+		parentnode.put(s,"-1");
+		MyNode goal=new MyNode(g,0);
+		q.add(start);
+		
+		Object front=0;
+		
+		int count=0,flag=0;
+		whileloop:
 		while(!q.isEmpty()||flag==0){
-			Object front=q.remove();
-			//System.out.println("Front is "+front); //prints the frontmost element
-			int frontindex=nodeslist.indexOf(front);
-			//System.out.println("Frontindex is "+frontindex); //prints the index from the nodelist	
-			//System.out.println(front+" "+count);
-			if(front.equals(goal)){
+			 front=q.remove();
+			
+			MyNode f=new MyNode(front.toString(),0);
+			String a=f.name;
+			String b=goal.name;
+			
+			if(a.equals(b)){
 				//System.out.println("Found");
 				flag=1;
-				break;
+				break whileloop;
+				
 			}
 			else{
-				for(int k=0;k<nodeslist.size();k++){
-					if(aMatrix[frontindex][k]==1){
-						Object child=nodeslist.get(k);
-						//System.out.println(child);
-						if(visited[k]==false){
-							q.add(child);
-							visited[k]=true;
-							myparent[k]=frontindex;	
-							
+				
+				
+					//System.out.println(adjhash.get(key));
+				
+				//System.out.println(adjhash.get(front));
+				String key=front.toString();
+				
+				if(adjhash.containsKey(key)){
+					for(int j=0;j<adjhash.get(key).size();j++){
+						//System.out.print(adjhash.get(key).get(j)+" ");
+						//System.out.println(adjhash.get(key).get(j).weight);
+						if(adjhash.get(key).get(j).visited==false){
+						Object child=adjhash.get(key).get(j);
+						//Object parent=adjhash.get(key);
+						q.add(child);
+						//adjhash.get(key).get(j).parent= adjhash.get(key).toString();
+						//System.out.println(parentnode.containsKey(child.toString()));
+						if(parentnode.containsKey(child.toString())==false){
+						parentnode.put(child.toString(),front.toString());
 						}
-						//System.out.println(q);
+						adjhash.get(key).get(j).visited=true;
+						}
 					}
 				}
 			}
-			/*for(int i=0;i<myparent.length;i++){
-				System.out.print(myparent[i]+" ");
-			}*/		
+			
+				
 			
 		}
 		
-		int find=nodeslist.indexOf(g);
+		
+		
+		Object find=parentnode.get(front.toString());
 		Object ans1;
 		int ans;
 		Stack st=new Stack();
-		st.push(find);
-		while(myparent[find]!=-1){
-			find=myparent[find];  //find parent recursively
+		st.push(front);
+		while(!find.equals("-1")){
+			
 			st.push(find);
+			find=parentnode.get(find); //find parent recursively
+			
 				
 		}
 		while(!st.isEmpty()){
-			ans=(int)st.pop();
-			//System.out.println(ans);
-			ans1=nodeslist.get(ans);
+			ans1=st.pop();
 			System.out.println(ans1+" "+count);
 			count++;
 		}
@@ -199,11 +222,11 @@ public class homework {
 					
 			}
 			
-			homework h=new homework();
-			//h.creatematrix();
+			
 			
 				//CREATE ADJACENCY MATRIX
 				size=nodeslist.size();	
+				/* OLD ADJACENCY MATRIX CODE 
 				aMatrix=new int[size][size];
 				for(int i=4;i<=4+livetlno-1;i++){
 					String livetrafficlines=Files.readAllLines(Paths.get("input.txt")).get(i);
@@ -217,9 +240,10 @@ public class homework {
 					int beginNo=nodeslist.indexOf(node1); //index of 1st node
 					int endNo=nodeslist.indexOf(node2); //index of second node
 					aMatrix[beginNo][endNo]=1;
-					//aMatrix[endNo][beginNo]=1;
+					//aMatrix[endNo][beginNo]=1;  //***not needed***
 					
-				}
+				} 
+				*/
 				
 			/*for(int i=0;i<aMatrix.length;i++){
 				for(int j=0;j<aMatrix.length;j++){
@@ -229,13 +253,58 @@ public class homework {
 			}*/
 			
 			//System.out.println(nodeslist);
+				
+				//USING ARRAY LIST
+				adjhash=new LinkedHashMap<String,ArrayList<MyNode>>();
+				for(int i=4;i<=4+livetlno-1;i++){
+					String livetrafficlines=Files.readAllLines(Paths.get("input.txt")).get(i);
+					//System.out.println(livetrafficlines);	//Reads live traffic line by line
+					String[] liveTrafficArray=livetrafficlines.split(" ");
+					node1= liveTrafficArray[0];
+					node2= liveTrafficArray[1];
+					weight= liveTrafficArray[2];
+					int wt=Integer.parseInt(weight);
+					
+					if(adjhash.containsKey(node1)){
+						adjhash.get(node1).add(new MyNode(node2,wt)); //if its already present
+					}
+					else{
+						ArrayList newlist=new ArrayList<MyNode>();
+						newlist.add(new MyNode(node2,wt));
+						adjhash.put(node1,newlist);
+					}
+					
+				}
+				
+				
+				/* PRINT THE HASH LIST
+				 Set keys=adjhash.keySet();
+				for(Iterator i= keys.iterator(); i.hasNext();){
+					
+					String key=(String)i.next();
+					System.out.println(adjhash.get(key));
+					for(int j=0;j<adjhash.get(key).size();j++){
+						System.out.print(adjhash.get(key).get(j)+" ");
+						System.out.println(adjhash.get(key).get(j).weight);
+					}
+					
+				}*/
+				
+				
+				
+				
+				
+				
+				
+				
 			
-			if(type.equals("BFS")){
-				BFS(start,goal);
-			}
-			if(type.equals("DFS")){
-			DFS(start,goal);
-			}
+				if(type.equals("BFS")){
+					BFS(start,goal);
+				}
+				if(type.equals("DFS")){
+				DFS(start,goal);
+				}
+				
 			
 			
 			
@@ -265,13 +334,19 @@ public class homework {
 		
 	}
 
+
 }
+
+
+
 class MyNode{
 	
 	String name;
-	boolean explored=false;
-	public MyNode(String n){
+	int weight;
+	boolean visited=false;
+	public MyNode(String n,int w){
 		this.name=n;
+		this.weight=w;
 	}
 	public String toString(){
 		return name;
