@@ -1,80 +1,118 @@
-package homework1;
 
+import java.awt.List;
 import java.io.BufferedReader;
-import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
-public class homework {
-	
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Set;
+import java.util.Stack;
+
+import javax.tools.StandardLocation;
+
+//import com.sun.javafx.webkit.KeyCodeMap.Entry;
+
+public class homework{
 	static int[][] aMatrix;
 	static int size,livetlno;
 	static String line,node1,node2,weight;
-	static ArrayList nodeslist=new ArrayList<>();
+	static ArrayList nodeslist=new ArrayList<MyNode>();
 	static int[] myparent={};
+	static LinkedHashMap<String,ArrayList<MyNode>> adjhash;
+	static HashMap<String,String> parentnode;
+	static HashMap<MyNode,MyNode> parentnodeUCS;
+	static HashMap<String,Integer> sundayList;
+	static HashMap<MyNode,MyNode> parentnodeDFS;
+	static HashMap<String,Integer> visitedDFS;
+	static HashMap<String,MyNode> parentnodeAstar;
+	static HashMap<Object,Integer> closedAstar;
 	
-	public static void BFS(String s,String g){
-		myparent=new int[nodeslist.size()];
+	/*------BFS-----*/
+	
+	public static void BFS(String s,String g) throws FileNotFoundException{
+		parentnode =new HashMap<String,String>();
 		boolean[] visited=new boolean[nodeslist.size()];
 		Queue q=new LinkedList<>();
-		q.add(s);
-		myparent[0]=-1;
-		visited[0]=true;
-		Object goal=(Object)g;
-		Object start=(Object)s;
-		int count=0,flag=0,p,p1;
+		MyNode start=new MyNode(s,0);
+		start.visited=true;
+		parentnode.put(s,"-1");
+		MyNode goal=new MyNode(g,0);
+		q.add(start);
+		
+		Object front=0;
+		
+		int count=0,flag=0;
+		whileloop:
 		while(!q.isEmpty()||flag==0){
-			Object front=q.remove();
-			//System.out.println("Front is "+front); //prints the frontmost element
-			int frontindex=nodeslist.indexOf(front);
-			//System.out.println("Frontindex is "+frontindex); //prints the index from the nodelist	
-			//System.out.println(front+" "+count);
-			if(front.equals(goal)){
+			 front=q.remove();
+			
+			MyNode f=new MyNode(front.toString(),0);
+			String a=f.name;
+			String b=goal.name;
+			
+			if(a.equals(b)){
 				//System.out.println("Found");
 				flag=1;
-				break;
+				break whileloop;
+				
 			}
 			else{
-				for(int k=0;k<nodeslist.size();k++){
-					if(aMatrix[frontindex][k]==1){
-						Object child=nodeslist.get(k);
-						//System.out.println(child);
-						if(visited[k]==false){
-							q.add(child);
-							visited[k]=true;
-							myparent[k]=frontindex;	
-							
+				
+				
+					//System.out.println(adjhash.get(key));
+				
+				//System.out.println(adjhash.get(front));
+				String key=front.toString();
+				
+				if(adjhash.containsKey(key)){
+					for(int j=0;j<adjhash.get(key).size();j++){
+						//System.out.print(adjhash.get(key).get(j)+" ");
+						//System.out.println(adjhash.get(key).get(j).weight);
+						if(adjhash.get(key).get(j).visited==false){
+						Object child=adjhash.get(key).get(j);
+						q.add(child);
+						//System.out.println(parentnode.containsKey(child.toString()));
+						if(parentnode.containsKey(child.toString())==false){
+						parentnode.put(child.toString(),front.toString());
 						}
-						//System.out.println(q);
+						adjhash.get(key).get(j).visited=true;
+						}
 					}
 				}
 			}
-			/*for(int i=0;i<myparent.length;i++){
-				System.out.print(myparent[i]+" ");
-			}*/		
+			
+				
 			
 		}
 		
-		int find=nodeslist.indexOf(g);
+		
+		
+		Object find=parentnode.get(front.toString());
 		Object ans1;
 		int ans;
 		Stack st=new Stack();
-		st.push(find);
-		while(myparent[find]!=-1){
-			find=myparent[find];  //find parent recursively
+		st.push(front);
+		while(!find.equals("-1")){
+			
 			st.push(find);
+			find=parentnode.get(find); //find parent recursively
+			
 				
 		}
+		System.setOut(new PrintStream(new FileOutputStream("output.txt")));
 		while(!st.isEmpty()){
-			ans=(int)st.pop();
-			//System.out.println(ans);
-			ans1=nodeslist.get(ans);
+			ans1=st.pop();
 			System.out.println(ans1+" "+count);
 			count++;
 		}
@@ -84,77 +122,405 @@ public class homework {
 		
 	}
 	
-	public static void DFS(String s,String g){
-		myparent=new int[nodeslist.size()];
+	/*-------DFS------*/
+	
+	public static void DFS(String s,String g) throws FileNotFoundException{
+		
+		parentnodeDFS =new HashMap<MyNode,MyNode>();
+		visitedDFS=new HashMap<String,Integer>();
+		
+		
+		for(int i=0;i<nodeslist.size();i++){
+			String v=nodeslist.get(i).toString();
+			visitedDFS.put(v,0);
+		}
+		
 		boolean[] visited=new boolean[nodeslist.size()];
-		int count=0;
+		//Queue q=new LinkedList<>();
 		Stack ds=new Stack();
 		Stack temp=new Stack();
-		ds.push(s);
-		myparent[0]=-1;
-		visited[0]=true;
-		Object goal=(Object)g;
-		Object start=(Object)s;
-		int flag=0;
+		MyNode start=new MyNode(s,0);
+		start.visited=true;
+		visitedDFS.put(start.toString(),1);
+		parentnodeDFS.put(start, null);
+		MyNode goal=new MyNode(g,0);
+		ds.push(start);
+		
+		
+		
+		Object front=0;
+		
+		int count=0,flag=0;
+		whileloop:
 		while(!ds.isEmpty()||flag==0){
-			Object top=ds.pop();
-			int topindex=nodeslist.indexOf(top);
-			if(top.equals(goal)){
+			 front=ds.pop();
+			
+			MyNode f=(MyNode)front;
+			String a=f.name;
+			String b=goal.name;
+			
+			if(a.equals(g)){
 				//System.out.println("Found");
 				flag=1;
-				break;
+				break whileloop;
+				
 			}
 			else{
-				for(int k=0;k<nodeslist.size();k++){
-					if(aMatrix[topindex][k]==1){
-						Object child=nodeslist.get(k);
-						//System.out.println(child);
-						if(visited[k]==false){
-							temp.push(child);
-							visited[k]=true;
-							myparent[k]=topindex;	
-							
+				
+				
+					//System.out.println(adjhash.get(key));
+				
+				//System.out.println(adjhash.get(front));
+				String key=front.toString();
+				
+				if(adjhash.containsKey(key)){
+					for(int j=0;j<adjhash.get(key).size();j++){
+						//System.out.print(adjhash.get(key).get(j)+" ");
+						//System.out.println(adjhash.get(key).get(j).weight);
+						//System.out.println(adjhash.get(key).get(j).visited);
+						if(adjhash.get(key).get(j).visited==false && visitedDFS.get(adjhash.get(key).get(j).name)==0){
+						Object child=adjhash.get(key).get(j);
+						MyNode c=(MyNode)child;
+						c.visited=true;
+						temp.push(c);
+						//System.out.println(parentnode.containsKey(child.toString()));
+						if(parentnodeDFS.containsKey(c)==false && visitedDFS.get(adjhash.get(key).get(j).name)==0){
+						parentnodeDFS.put(c,f);
+						visitedDFS.put(c.toString(),1);
 						}
-						//System.out.println(q);
+						adjhash.get(key).get(j).visited=true;
+						//System.out.println(adjhash.get(key).get(j).visited);
+						}
 					}
 				}
 				Object temp2;
 				while(temp.empty()!=true){
 					temp2=temp.pop();
 					ds.push(temp2);
-				}
+				}	
 			}
-			/*for(int i=0;i<myparent.length;i++){
-				System.out.print(myparent[i]+" ");
-			}*/			
+			
+				
 			
 		}
 		
-		int find=nodeslist.indexOf(g);
+		
+		
+		Object find=parentnodeDFS.get(front);
 		Object ans1;
 		int ans;
 		Stack st=new Stack();
-		st.push(find);
-		while(myparent[find]!=-1){
-			find=myparent[find];  //find parent recursively
+		st.push(front);
+		while(find!=null){
+			
 			st.push(find);
+			find=parentnodeDFS.get(find); //find parent recursively
+			
 				
 		}
+		System.setOut(new PrintStream(new FileOutputStream("output.txt")));
 		while(!st.isEmpty()){
-			ans=(int)st.pop();
-			//System.out.println(ans);
-			ans1=nodeslist.get(ans);
+			ans1=st.pop();
 			System.out.println(ans1+" "+count);
 			count++;
 		}
 		
-	}
-	
-	public void creatematrix() throws IOException{
-		
 		
 	}
 	
+	/*-------------UNIFORM COST SEARCH------------*/
+	
+	public static void UCS(String s,String g) throws FileNotFoundException {
+		
+		 parentnodeUCS =new HashMap<MyNode,MyNode>();
+		Queue<MyNode> open=new PriorityQueue<MyNode>(new Comparator<MyNode>() {
+			@Override
+			public int compare(MyNode o1, MyNode o2) {
+				if(o1.cost<o2.cost){
+					return -1;
+				}
+				else if(o1.cost>o2.cost){
+					return 1;
+				}
+				else
+					return o1.timestamp-o2.timestamp;
+				
+			}
+			
+		});
+		Queue closed=new LinkedList<MyNode>();
+		Queue childQ=new LinkedList<MyNode>();
+		MyNode start=new MyNode(s,0);
+		start.visited=true;
+		start.cost=0;
+		parentnodeUCS.put(start,null);
+		int flag=0,inc=0,count=0;
+		MyNode goal=new MyNode(g,0);
+		open.add(start);
+		start.setTS(inc);
+		MyNode front=null,c,n = null;
+		whileloop:
+			while(!open.isEmpty()||flag==0){
+				 front=open.remove();
+				 int prevWeight=front.weight;    //to be added
+				
+				MyNode f=new MyNode(front.toString(),0);
+				String a=f.name;
+				String b=goal.name;
+				
+				if(a.equals(b)){
+					//System.out.println("Found");
+					flag=1;
+					break whileloop;
+					
+				}
+				else{
+					
+					String key=front.toString();
+					
+					if(adjhash.containsKey(key)){
+						for(int j=0;j<adjhash.get(key).size();j++){
+							
+							if(adjhash.get(key).get(j).visited==false){
+							MyNode child=adjhash.get(key).get(j);   
+
+							
+							childQ.add(child);  //children <-- Expand(currnode, Operators[problem])
+							child.cost=front.cost+child.weight;
+							//System.out.println(childQ);
+							
+							if(parentnodeUCS.containsKey(child)==false){
+							parentnodeUCS.put(child,front);
+							}
+							adjhash.get(key).get(j).visited=true;
+							}
+						}
+							
+						
+					}
+					while(!childQ.isEmpty()){
+						Object chu=childQ.remove();
+						c=(MyNode)chu;
+						
+						if(!(open.contains(chu)&&closed.contains(chu))){	//if no node in open or closed has child’s state
+							c.setTS(inc);
+							inc++;
+							open.add(c);
+							
+						}
+						else if(open.contains(chu)){
+							if(nodeslist.contains(chu)==true){
+								int index1=nodeslist.indexOf(chu);
+								 n=(MyNode)nodeslist.get(index1);
+							}
+							MyNode x=new MyNode();
+							int compAns=x.compare(n,c);
+							if(compAns>0){
+								open.remove(n);
+								c.setTS(inc);
+								inc++;
+								open.add(c);
+							}
+							 
+						}
+						else if(closed.contains(chu)){
+							if(nodeslist.contains(chu)==true){
+								int index1=nodeslist.indexOf(chu);
+								 n=(MyNode)nodeslist.get(index1);
+							}
+							MyNode x=new MyNode();
+							int compAns=x.compare(n,c);
+							if(compAns>0){
+								closed.remove(n);
+								c.setTS(inc);
+								inc++;
+								open.add(c);
+								
+							}
+							
+						}
+					}
+					closed.add(front);
+						
+				}
+				
+			}
+		
+		//System.out.println(adjhash);
+		//System.out.println(nodeslist);
+		//System.out.println(parentnodeUCS);
+		MyNode find=parentnodeUCS.get(front);
+		MyNode ans1;
+		int ans;
+		Stack<MyNode> st=new Stack();
+		st.push(front);
+		while(find!=null){
+			
+			st.push(find);
+			find=parentnodeUCS.get(find); //find parent recursively
+			
+				
+		}
+		System.setOut(new PrintStream(new FileOutputStream("output.txt")));
+		while(!st.isEmpty()){
+			ans1=st.pop();
+			System.out.println(ans1+" "+ans1.cost);
+			
+		}
+		
+	}
+	
+	/*---------- A*------------*/
+	
+public static void Astar(String s,String g) throws FileNotFoundException{
+		
+	parentnodeUCS =new HashMap<MyNode,MyNode>();
+	Queue<MyNode> open=new PriorityQueue<MyNode>(new Comparator<MyNode>() {
+		@Override
+		public int compare(MyNode o1, MyNode o2) {
+			if(o1.sundaycost<o2.sundaycost){
+				return -1;
+			}
+			else if(o1.sundaycost>o2.sundaycost){
+				return 1;
+			}
+			else
+				return o1.timestamp-o2.timestamp;
+			
+		}
+		
+	});
+	Queue closed=new LinkedList<MyNode>();
+	Queue childQ=new LinkedList<MyNode>();
+	MyNode start=new MyNode(s,0);
+	start.visited=true;
+	start.cost=0;
+	parentnodeUCS.put(start,null);
+	int flag=0,inc=0,count=0;
+	MyNode goal=new MyNode(g,0);
+	open.add(start);
+	start.setTS(inc);
+	MyNode front=null,c,n = null;
+	whileloop:
+		while(!open.isEmpty()||flag==0){
+			 front=open.poll();
+			 int prevWeight=front.weight;    //to be added
+			
+			MyNode f=new MyNode(front.toString(),0);
+			String a=f.name;
+			String b=goal.name;
+			
+			if(a.equals(b)){
+				//System.out.println("Found");
+				flag=1;
+				break whileloop;
+				
+			}
+			else{
+				
+				String key=front.toString();
+				
+				if(adjhash.containsKey(key)){
+					for(int j=0;j<adjhash.get(key).size();j++){
+						
+						if(adjhash.get(key).get(j).visited==false){
+						MyNode child=adjhash.get(key).get(j);   
+
+						
+						childQ.add(child);  //children <-- Expand(currnode, Operators[problem])
+						int sCost= sundayList.get(child.toString());
+						int fCost=sundayList.get(front.toString());
+						if(parentnodeUCS.get(front)==null){
+							child.cost=front.cost+child.weight;
+						}
+						else{
+							child.cost=front.cost+child.weight;
+						}
+						child.sundaycost=child.cost+sCost;
+						//System.out.println(childQ);
+						
+						if(parentnodeUCS.containsKey(child)==false){
+						parentnodeUCS.put(child,front);
+						}
+						adjhash.get(key).get(j).visited=true;
+						}
+					}
+						
+					
+				}
+				while(!childQ.isEmpty()){
+					Object chu=childQ.remove();
+					c=(MyNode)chu;
+					
+					if(!(open.contains(chu)&&closed.contains(chu))){	//if no node in open or closed has child’s state
+						c.setTS(inc);
+						inc++;
+						open.add(c);
+						
+					}
+					else if(open.contains(chu)){
+						if(nodeslist.contains(chu)==true){
+							int index1=nodeslist.indexOf(chu);
+							 n=(MyNode)nodeslist.get(index1);
+						}
+						MyNode x=new MyNode();
+						int compAns=x.compare(n,c);
+						if(compAns>0){
+							open.remove(n);
+							c.setTS(inc);
+							inc++;
+							open.add(c);
+						}
+						 
+					}
+					else if(closed.contains(chu)){
+						if(nodeslist.contains(chu)==true){
+							int index1=nodeslist.indexOf(chu);
+							 n=(MyNode)nodeslist.get(index1);
+						}
+						MyNode x=new MyNode();
+						int compAns=x.compare(n,c);
+						if(compAns>0){
+							closed.remove(n);
+							c.setTS(inc);
+							inc++;
+							open.add(c);
+							
+						}
+						
+					}
+				}
+				closed.add(front);
+					
+			}
+			
+		}
+	
+	//System.out.println(adjhash);
+	//System.out.println(nodeslist);
+	//System.out.println(parentnodeUCS);
+	MyNode find=parentnodeUCS.get(front);
+	MyNode ans1;
+	int ans;
+	Stack<MyNode> st=new Stack();
+	st.push(front);
+	while(find!=null){
+		
+		st.push(find);
+		find=parentnodeUCS.get(find); //find parent recursively
+		
+			
+	}
+	System.setOut(new PrintStream(new FileOutputStream("output.txt")));
+	while(!st.isEmpty()){
+		ans1=st.pop();
+		System.out.println(ans1+" "+ans1.cost);
+		
+	}
+	
+	}
+	
+		
 	public static void main(String args[]) throws IOException{
 		
 		int stlno=0;
@@ -163,7 +529,7 @@ public class homework {
 			FileReader fr=new FileReader("input.txt");
 			BufferedReader br=new BufferedReader(fr);
 			String type=Files.readAllLines(Paths.get("input.txt")).get(0); //Reads the type of algo
-			System.out.println(type);
+			//System.out.println(type);
 			String start=Files.readAllLines(Paths.get("input.txt")).get(1); //Reads the start node
 			//System.out.println(start);
 			String goal=Files.readAllLines(Paths.get("input.txt")).get(2); //Reads the goal node
@@ -176,7 +542,7 @@ public class homework {
 			
 			for(int i=4;i<=4+livetlno-1;i++){
 				String livetrafficlines=Files.readAllLines(Paths.get("input.txt")).get(i);
-				System.out.println(livetrafficlines);	//Reads live traffic line by line
+				//System.out.println(livetrafficlines);	//Reads live traffic line by line
 				String[] liveTrafficArray=livetrafficlines.split(" ");
 				node1= liveTrafficArray[0];
 				node2= liveTrafficArray[1];
@@ -196,12 +562,14 @@ public class homework {
 					
 			}
 			
-			homework h=new homework();
-			//h.creatematrix();
+			
 			
 				//CREATE ADJACENCY MATRIX
 				size=nodeslist.size();	
-				aMatrix=new int[size][size];
+			//System.out.println(nodeslist);
+				
+				//USING ARRAY LIST
+				adjhash=new LinkedHashMap<String,ArrayList<MyNode>>();
 				for(int i=4;i<=4+livetlno-1;i++){
 					String livetrafficlines=Files.readAllLines(Paths.get("input.txt")).get(i);
 					//System.out.println(livetrafficlines);	//Reads live traffic line by line
@@ -209,67 +577,137 @@ public class homework {
 					node1= liveTrafficArray[0];
 					node2= liveTrafficArray[1];
 					weight= liveTrafficArray[2];
-					//System.out.println(nodeslist.indexOf(node1));
-					//System.out.println(nodeslist.indexOf(node2));
-					int beginNo=nodeslist.indexOf(node1); //index of 1st node
-					int endNo=nodeslist.indexOf(node2); //index of second node
-					aMatrix[beginNo][endNo]=1;
-					aMatrix[endNo][beginNo]=1;
+					int wt=Integer.parseInt(weight);
+					
+					if(adjhash.containsKey(node1)){
+						adjhash.get(node1).add(new MyNode(node2,wt)); //if its already present
+					}
+					else{
+						ArrayList newlist=new ArrayList<MyNode>();
+						newlist.add(new MyNode(node2,wt));
+						adjhash.put(node1,newlist);
+					}
 					
 				}
 				
-			/*for(int i=0;i<aMatrix.length;i++){
-				for(int j=0;j<aMatrix.length;j++){
-					System.out.print(aMatrix[i][j]);
-				}
-				System.out.println();
-			}*/
+				
+				/* PRINT THE HASH LIST
+				 Set keys=adjhash.keySet();
+				for(Iterator i= keys.iterator(); i.hasNext();){
+					
+					String key=(String)i.next();
+					System.out.println(adjhash.get(key));
+					for(int j=0;j<adjhash.get(key).size();j++){
+						System.out.print(adjhash.get(key).get(j)+" ");
+						System.out.println(adjhash.get(key).get(j).weight);
+					}
+					
+				}*/
+				
 			
-			System.out.println(nodeslist);
 			
 			
-			//BFS(start,goal);
-			DFS(start,goal);
-			
-			
-			
-			
-			/* CODE FOR SUNDAY TRAFFIC
-			
+			// CODE FOR SUNDAY TRAFFIC
+			sundayList= new HashMap<String,Integer>();
 			int getsundaytraffic= 4+livetlno; //Line number for sunday traffic
 			//System.out.println(getsundaytraffic);
 			String sundaytl=Files.readAllLines(Paths.get("input.txt")).get(getsundaytraffic); //Reads the no. of live traffic lines
 			//System.out.println(sundaytl);
 			int sundaytlno=Integer.parseInt(sundaytl.trim());
-			System.out.println(sundaytlno);
+			//System.out.println(sundaytlno);
 			for(int i=getsundaytraffic;i<getsundaytraffic+sundaytlno;i++){
 				String sundaytrafficlines=Files.readAllLines(Paths.get("input.txt")).get(i+1); //Reads Sunday traffic lines
-				System.out.println(sundaytrafficlines);
+				//System.out.println(sundaytrafficlines);
+				String[] sundayTrafficArray=sundaytrafficlines.split(" ");
+				node1= sundayTrafficArray[0];
+				//node2= liveTrafficArray[1];
+				weight= sundayTrafficArray[1];
+				int wt=Integer.parseInt(weight);
+				sundayList.put(node1,wt);
 				
 			}
-			 END OF CODE FOR SUNDAY TRAFFIC */
+			//System.out.println(sundayList);
+			
+			
+			if(type.equals("BFS")){
+				BFS(start,goal);
+			}
+			if(type.equals("DFS")){
+			DFS(start,goal);
+			}
+			if(type.equals("UCS")){
+			UCS(start,goal);
+			}
+			if(type.equals("A*")){
+				Astar(start,goal);
+			}	
+			
+			 //END OF CODE FOR SUNDAY TRAFFIC 
+			
 			/*while((line=br.readLine())!=null){
 				System.out.println(line);
 				
 				
 			}*/
-	
+			
+			//System.out.println("This is a test file");
 		
 		
 		
 	}
 
+
 }
-class MyNode{
+
+
+
+
+class MyNode implements Comparator<MyNode> {
 	
 	String name;
-	boolean explored=false;
-	public MyNode(String n){
+	int weight;
+	boolean visited=false;
+	int cost;
+	int timestamp;
+	int sundaycost;
+	public void setSundayCost(int sundaycost){
+		this.sundaycost=sundaycost;
+	}
+	public MyNode(String n,int w){
 		this.name=n;
+		this.weight=w;
+		this.timestamp=0;
 	}
 	public String toString(){
 		return name;
 		
 	}
+	public MyNode(){
+		
+	}
+	
+	public void setTS(int timestamp){
+		this.timestamp= timestamp;
+	}
+	
+	@Override
+	public int compare(MyNode o1, MyNode o2) {
+		// TODO Auto-generated method stub
+		if(o1.cost<o2.cost){
+			return -1;
+		}
+		else if(o1.cost>o2.cost){
+			return 1;
+		}
+		else
+			return o1.timestamp-o2.timestamp;
+		
+		//return 0;
+	}
+	
 	
 }
+
+
+	
+
