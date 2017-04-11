@@ -1,2 +1,2 @@
 # AI-Homework
-Contains code for BFS and DFS in java 
+Contains code for BFS,DFS,UCS and A* in java 
